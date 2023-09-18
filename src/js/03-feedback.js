@@ -1,46 +1,37 @@
 import throttle from 'lodash.throttle';
 
-function saveToLocalStorage() {
-  const emailInput = document.querySelector('input[name="email"]');
-  const messageInput = document.querySelector('textarea[name="message"]');
+const formEl = document.querySelector('.feedback-form');
+const STORAGE_KEY = 'feedback-form-state';
 
-  const formData = {
-    email: emailInput.value,
-    message: messageInput.value,
-  };
-
-  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
+let formData = {}; // глобальний об'єет ФормДата
+function saveToLocalStorage(e) {
+  // универсальний скрипт за допомогою якого ми зберігаємо данні. динамічно додаємо в обьект потім цей об'єкт зберігаємо
+  formData[e.target.name] = e.target.value.trim();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
 }
-
+// зберігаєтся всі дочирні елементи форми таким чином ми можемо динамічно до них звертатись, звертатись до значення велью, задавати велью і таке отримувати при деструктурезації. буде працювати з будьякою формою і кількістю полів.
 function fillFormFromLocalStorage() {
-  const formData =
-    JSON.parse(localStorage.getItem('feedback-form-state')) || {};
-  const emailInput = document.querySelector('input[name="email"]');
-  const messageInput = document.querySelector('textarea[name="message"]');
-
-  emailInput.value = formData.email || '';
-  messageInput.value = formData.message || '';
+  try {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (!savedData) return;
+    formData = JSON.parse(savedData);
+    Object.entries(formData).forEach(([key, val]) => {
+      formEl.elements[key].value = val;
+    });
+  } catch ({ message }) {
+    console.log(message);
+  }
 }
-
-function handleSubmit(event) {
-  event.preventDefault();
-
-  const emailInput = document.querySelector('input[name="email"]');
-  const messageInput = document.querySelector('textarea[name="message"]');
-
-  const formData = {
-    email: emailInput.value,
-    message: messageInput.value,
-  };
+// після відправки все очиститця і все окей
+function handleSubmit(e) {
+  e.preventDefault();
 
   console.log(formData);
-
-  localStorage.removeItem('feedback-form-state');
-  emailInput.value = '';
-  messageInput.value = '';
+  formData = {};
+  localStorage.removeItem(STORAGE_KEY);
+  e.target.reset();
 }
 
-const form = document.querySelector('.feedback-form');
 form.addEventListener('input', throttle(saveToLocalStorage, 500));
 
 window.addEventListener('load', fillFormFromLocalStorage);
